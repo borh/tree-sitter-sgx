@@ -3,6 +3,23 @@ module.exports = grammar({
 
   rules: {
     // The starting rule of the grammar
+    source_file: $ => repeat(
+      choice(
+        $.pattern_definition,
+        $.query
+      )
+    ),
+
+    // Pattern definitions
+    pattern_definition: $ => seq(
+      $.pattern_name,
+      ':=',
+      $.expression
+    ),
+
+    pattern_name: $ => $.identifier,
+
+    // A query is an expression, possibly with ':' and more expressions
     query: $ => seq(
       $.expression,
       repeat(
@@ -34,13 +51,12 @@ module.exports = grammar({
       ))
     )),
 
-    // Sequences are terms possibly connected by relations
-    sequence: $ => prec.left(seq(
-      $.term,
-      repeat(seq(
-        $.relation_pattern,
+    // Sequences can have multiple elements starting with optional relation patterns
+    sequence: $ => prec.left(repeat1(
+      seq(
+        optional($.relation_pattern),
         $.term
-      ))
+      )
     )),
 
     // Terms can be negated or postfix terms
@@ -59,7 +75,8 @@ module.exports = grammar({
     primary_term: $ => choice(
       $.node_pattern,
       seq('(', $.expression, ')'),
-      seq('[', $.expression, ']')
+      seq('[', $.expression, ']'),
+      $.pattern_reference
     ),
 
     // Node patterns match nodes with specific attributes
@@ -113,18 +130,32 @@ module.exports = grammar({
     relation_pattern: $ => seq(
       optional('!'),
       $.relation_operator,
-      optional($.relation_label)
+      optional($.relation_label),
+      optional($.edge_name)
     ),
 
     // Relation operators (e.g., <, >, <<, >>, $+, $-, etc.)
     relation_operator: $ => token(choice(
-      '<<', '>>', '==', '$++', '$--', '$+', '$-', '>++', '>--', '>+', '>-', '<++', '<--', '<+', '<-', '--', '..', '<', '>', '.', '-',
+      '<<', '>>', '==', '$++', '$--', '$+', '$-', '>++', '>--', '>+', '>-',
+      '<++', '<--', '<+', '<-', '--', '..', '<', '>', '.', '-',
     )),
 
     // Labels for specifying relation types (e.g., >nsubj)
     relation_label: $ => $.identifier,
 
+    // Edge names, e.g., =conj or ~edge
+    edge_name: $ => seq(
+      choice('=', '~'),
+      $.name
+    ),
+
+    // Pattern reference
+    pattern_reference: $ => seq(
+      '@',
+      $.pattern_name
+    ),
+
     // Identifiers used for keys, values, names, and labels
-    identifier: $ => /[^;:{}=\/\s&|!()\[\]<>.]+/,
+    identifier: $ => /[^;:{}=\/\s&|!()\[\]<>.~@:=$]+/,
   }
 });

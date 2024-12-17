@@ -106,11 +106,22 @@
                 export SHELL=${pkgs.bashInteractive}/bin/bash
                 export PS1='(direnv) \[\e[34m\]\w\[\e[0m\] $(if [[ $? == 0 ]]; then echo -e "\[\e[32m\]"; else echo -e "\[\e[31m\]"; fi)#\[\e[0m\] '
                 eval "$(direnv hook bash)"
+                export PATH=${self'.packages.build-ts}/bin/:$PATH
               '';
             };
           };
 
-          # packages.
+          packages.build-ts = pkgs.writeShellApplication {
+            name = "build-ts";
+            runtimeInputs = development-packages;
+            text = ''
+              make clean
+              tree-sitter generate src/sgx.js
+              make test
+              tree-sitter build --wasm
+              tree-sitter playground -q
+            '';
+          };
         };
       flake = {
         # The usual flake attributes can be defined here, including system-
