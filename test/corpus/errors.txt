@@ -2,7 +2,7 @@
 Invalid comment
 
 :error
-:language(semgrex)
+:language(sgx)
 ================================================================================
 
 <error>
@@ -15,7 +15,7 @@ Invalid comment
 Invalid bracket
 
 :error
-:language(semgrex)
+:language(sgx)
 ================================================================================
 
 [<error/>tag:/NN/}

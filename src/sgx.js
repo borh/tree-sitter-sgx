@@ -1,161 +1,252 @@
 module.exports = grammar({
-  name: 'semgrex',
+  name: 'sgx',
+
+  extras: $ => [/\s/],
+
+  conflicts: $ => [
+    [$.attribute],
+    [$.sequence],
+    [$.disjunction, $.relation_group],
+    [$.expression, $.term],
+    [$.relation_pattern, $.term],
+    [$.sequence, $.relation_group],
+    [$.relation_pattern, $.relation_group],
+    [$.sequence, $.relation_pattern],
+    [$.relation_pattern, $.disjunction],
+    [$.relation_group, $.disjunction],
+    [$.sequence, $.relation_pattern, $.relation_group],
+    [$.expression, $.relation_group]
+  ],
 
   rules: {
-    // The starting rule of the grammar
     source_file: $ => repeat(
       choice(
+        $.group_definition,
         $.pattern_definition,
-        $.query
+        $.standalone_pattern
       )
     ),
 
-    // Pattern definitions
-    pattern_definition: $ => seq(
+    standalone_pattern: $ => prec(3, seq(
+      optional($.metadata_block),
+      $.expression,
+      optional('.')
+    )),
+
+    pattern_definition: $ => prec(4, seq(
+      optional($.metadata_block),
       $.pattern_name,
       ':=',
-      $.expression
-    ),
+      $.pattern_body,
+      '.'
+    )),
 
     pattern_name: $ => $.identifier,
 
-    // A query is an expression, possibly with ':' and more expressions
-    query: $ => seq(
+    pattern_body: $ => prec(6, choice(
       $.expression,
-      repeat(
-        seq(
-          ':',
-          $.expression
-        )
-      )
-    ),
+      seq($.pattern_reference, $.relation_group)
+    )),
 
-    // Expressions can be conjunctions of disjunctions
-    expression: $ => $.conjunction,
-
-    // Conjunctions are expressions separated by '&'
-    conjunction: $ => prec.left(seq(
+    expression: $ => prec(5, choice(
+      $.conjunction,
       $.disjunction,
-      repeat(seq(
-        '&',
-        $.disjunction
-      ))
-    )),
-
-    // Disjunctions are sequences separated by '|'
-    disjunction: $ => prec.left(seq(
       $.sequence,
+      $.pattern_reference,
+      $.term
+    )),
+
+    conjunction: $ => prec.left(3, seq(
+      $.disjunction,
+      repeat(seq('&', $.disjunction))
+    )),
+
+    disjunction: $ => prec.left(2, seq(
+      $.sequence,
+      repeat1(seq('|', $.sequence))
+    )),
+
+    sequence: $ => prec.left(3, seq(
+      $.term,
       repeat(seq(
-        '|',
-        $.sequence
+        optional('&'),
+        choice(
+          $.relation_pattern,
+          $.relation_group
+        ),
+        optional($.term)
       ))
     )),
 
-    // Sequences can have multiple elements starting with optional relation patterns
-    sequence: $ => prec.left(repeat1(
-      seq(
-        optional($.relation_pattern),
-        $.term
-      )
+    term: $ => prec.right(4, choice(
+      seq('!', $.primary_term),
+      $.postfix_term
     )),
 
-    // Terms can be negated or postfix terms
-    term: $ => choice(
-      seq('!', $.term),
-      $.postfix_term
-    ),
-
-    // Postfix terms can have the optionality operator '?'
-    postfix_term: $ => choice(
-      seq($.primary_term, '?'),
+    postfix_term: $ => prec.left(1, choice(
+      seq($.primary_term, '?'),  // zero or one
+      seq($.primary_term, '*'),  // zero or more 
+      seq($.primary_term, '+'),  // one or more
+      $.quantified_term,         // term with range quantifier
       $.primary_term
-    ),
+    )),
 
-    // Primary terms are the basic units without any operators
-    primary_term: $ => choice(
-      $.node_pattern,
-      seq('(', $.expression, ')'),
-      seq('[', $.expression, ']'),
-      $.pattern_reference
-    ),
-
-    // Node patterns match nodes with specific attributes
-    node_pattern: $ => seq(
+    // Terms with range quantifiers
+    quantified_term: $ => prec(2, seq(
+      $.primary_term,
       '{',
-      optional($.attributes),
-      '}',
+      choice(
+        seq(/[0-9]+/, ',', /[0-9]+/),  // {n,m}
+        seq(/[0-9]+/, ','),            // {n,}
+        seq(',', /[0-9]+/),            // {,m}
+        /[0-9]+/                       // {n}
+      ),
+      '}'
+    )),
+
+    bare_string: $ => token(prec(-1, /[^\s\[\](){}/|&!?*+.@=:;>]+/)),
+
+    primary_term: $ => prec.right(4, choice(
+      $.node_pattern,
+      prec(5, seq(
+        '(',
+        choice(
+          $.expression,
+          $.relation_group
+        ),
+        ')'
+      )),
+      $.pattern_reference,
+      $.regex,
+      $.bare_string
+    )),
+
+    node_pattern: $ => seq(
+      '[',
+      optional(choice(
+        '$',
+        seq(
+          optional('!'),
+          optional($.attributes)
+        ))
+      ),
+      ']',
       optional($.node_name)
     ),
 
-    // Attributes within a node pattern
     attributes: $ => seq(
       $.attribute,
       repeat(seq(';', $.attribute))
     ),
 
-    // An individual attribute, possibly negated
-    attribute: $ => seq(
-      optional('!'),
+    attribute: $ => choice(
+      $.negated_attribute,
+      $.positive_attribute
+    ),
+
+    negated_attribute: $ => prec(2, seq(
+      '!',
       $.key,
       ':',
       $.value
-    ),
+    )),
 
-    // Attribute keys (e.g., word, lemma, tag)
+    positive_attribute: $ => prec(1, seq(
+      $.key,
+      ':',
+      $.value
+    )),
+
     key: $ => $.identifier,
 
-    // Attribute values can be identifiers or regex patterns
-    value: $ => choice(
-      $.identifier,
-      $.regex
-    ),
+    value: $ => choice($.identifier, $.regex),
 
-    // Regex patterns enclosed in '/'
     regex: $ => token(seq(
       '/',
-      repeat(choice(
-        /[^\\/]/,        // Any character except '\' or '/'
-        seq('\\', /./)   // Escaped character
-      )),
+      repeat(choice(/[^\\/]/, seq('\\', /./))),
       '/'
     )),
 
-    // Naming a node for backreferencing
     node_name: $ => seq('=', $.name),
 
-    // Names used in node naming
     name: $ => $.identifier,
 
-    // Relation patterns connecting node patterns
-    relation_pattern: $ => seq(
-      optional('!'),
-      $.relation_operator,
-      optional($.relation_label),
-      optional($.edge_name)
-    ),
-
-    // Relation operators (e.g., <, >, <<, >>, $+, $-, etc.)
-    relation_operator: $ => token(choice(
-      '<<', '>>', '==', '$++', '$--', '$+', '$-', '>++', '>--', '>+', '>-',
-      '<++', '<--', '<+', '<-', '--', '..', '<', '>', '.', '-',
+    relation_pattern: $ => prec.right(5, choice(
+      seq(
+        optional('!'),
+        $.relation_operator,
+        optional(prec.left(2, choice(
+          $.relation_label,
+          $.edge_name
+        )))
+      ),
+      prec(6, seq(
+        '(',
+        choice(
+          $.relation_group,
+          $.expression
+        ),
+        ')',
+        optional('?')
+      ))
     )),
 
-    // Labels for specifying relation types (e.g., >nsubj)
+    relation_group: $ => prec.left(7, choice(
+      seq($.sequence, choice('|', '&'), $.relation_group),
+      $.sequence
+    )),
+
+    relation_operator: $ => token(prec(2, choice(
+      '>',
+      '<',
+      '@',
+      />[a-zA-Z]+/,
+      /<[a-zA-Z]+/,
+      '>dobj',
+      '>prep',
+      '>nmod',
+      '>>',
+      '<<',
+      '..',
+      '.',
+      '&',
+      '|'
+    ))),
+
     relation_label: $ => $.identifier,
 
-    // Edge names, e.g., =conj or ~edge
     edge_name: $ => seq(
       choice('=', '~'),
       $.name
     ),
 
-    // Pattern reference
-    pattern_reference: $ => seq(
-      '@',
-      $.pattern_name
+    pattern_reference: $ => seq('@', $.pattern_name),
+
+    // A block of metadata that must come immediately before a pattern definition
+    metadata_block: $ => seq(
+      '---',
+      repeat($.metadata_line),
+      '---'
     ),
 
-    // Identifiers used for keys, values, names, and labels
-    identifier: $ => /[^;:{}=\/\s&|!()\[\]<>.~@:=$]+/,
+    metadata_line: $ => /[^\n]+/,
+
+    group_definition: $ => seq(
+      '///',
+      'group',
+      $.group_name,
+      '///',
+      repeat($.group_metadata_line),
+      '///',
+      repeat($.pattern_definition),
+      '///'
+    ),
+
+    group_name: $ => $.identifier,
+
+    group_metadata_line: $ => token(prec(-1, /[^/][^\n]*/)),
+
+    // Allow letters, underscore, Japanese characters, followed by non-special chars
+    identifier: $ => /[a-zA-Z_\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF][^\s;:{}=\/&|!()\[\]<>.~@]*/
   }
 });

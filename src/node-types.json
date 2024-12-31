@@ -4,15 +4,15 @@
     "named": true,
     "fields": {},
     "children": {
-      "multiple": true,
+      "multiple": false,
       "required": true,
       "types": [
         {
-          "type": "key",
+          "type": "negated_attribute",
           "named": true
         },
         {
-          "type": "value",
+          "type": "positive_attribute",
           "named": true
         }
       ]
@@ -89,6 +89,60 @@
         {
           "type": "conjunction",
           "named": true
+        },
+        {
+          "type": "disjunction",
+          "named": true
+        },
+        {
+          "type": "pattern_reference",
+          "named": true
+        },
+        {
+          "type": "sequence",
+          "named": true
+        },
+        {
+          "type": "term",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "group_definition",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": true,
+      "required": true,
+      "types": [
+        {
+          "type": "group_metadata_line",
+          "named": true
+        },
+        {
+          "type": "group_name",
+          "named": true
+        },
+        {
+          "type": "pattern_definition",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "group_name",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": false,
+      "required": true,
+      "types": [
+        {
+          "type": "identifier",
+          "named": true
         }
       ]
     }
@@ -109,6 +163,21 @@
     }
   },
   {
+    "type": "metadata_block",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": true,
+      "required": false,
+      "types": [
+        {
+          "type": "metadata_line",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
     "type": "name",
     "named": true,
     "fields": {},
@@ -118,6 +187,25 @@
       "types": [
         {
           "type": "identifier",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "negated_attribute",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": true,
+      "required": true,
+      "types": [
+        {
+          "type": "key",
+          "named": true
+        },
+        {
+          "type": "value",
           "named": true
         }
       ]
@@ -158,7 +246,7 @@
     }
   },
   {
-    "type": "pattern_definition",
+    "type": "pattern_body",
     "named": true,
     "fields": {},
     "children": {
@@ -167,6 +255,33 @@
       "types": [
         {
           "type": "expression",
+          "named": true
+        },
+        {
+          "type": "pattern_reference",
+          "named": true
+        },
+        {
+          "type": "relation_group",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "pattern_definition",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": true,
+      "required": true,
+      "types": [
+        {
+          "type": "metadata_block",
+          "named": true
+        },
+        {
+          "type": "pattern_body",
           "named": true
         },
         {
@@ -207,6 +322,25 @@
     }
   },
   {
+    "type": "positive_attribute",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": true,
+      "required": true,
+      "types": [
+        {
+          "type": "key",
+          "named": true
+        },
+        {
+          "type": "value",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
     "type": "postfix_term",
     "named": true,
     "fields": {},
@@ -216,6 +350,10 @@
       "types": [
         {
           "type": "primary_term",
+          "named": true
+        },
+        {
+          "type": "quantified_term",
           "named": true
         }
       ]
@@ -230,6 +368,10 @@
       "required": true,
       "types": [
         {
+          "type": "bare_string",
+          "named": true
+        },
+        {
           "type": "expression",
           "named": true
         },
@@ -240,12 +382,35 @@
         {
           "type": "pattern_reference",
           "named": true
+        },
+        {
+          "type": "regex",
+          "named": true
+        },
+        {
+          "type": "relation_group",
+          "named": true
         }
       ]
     }
   },
   {
-    "type": "query",
+    "type": "quantified_term",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": false,
+      "required": true,
+      "types": [
+        {
+          "type": "primary_term",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "relation_group",
     "named": true,
     "fields": {},
     "children": {
@@ -253,7 +418,11 @@
       "required": true,
       "types": [
         {
-          "type": "expression",
+          "type": "relation_group",
+          "named": true
+        },
+        {
+          "type": "sequence",
           "named": true
         }
       ]
@@ -284,6 +453,14 @@
       "types": [
         {
           "type": "edge_name",
+          "named": true
+        },
+        {
+          "type": "expression",
+          "named": true
+        },
+        {
+          "type": "relation_group",
           "named": true
         },
         {
@@ -326,11 +503,34 @@
       "required": false,
       "types": [
         {
+          "type": "group_definition",
+          "named": true
+        },
+        {
           "type": "pattern_definition",
           "named": true
         },
         {
-          "type": "query",
+          "type": "standalone_pattern",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "standalone_pattern",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": true,
+      "required": true,
+      "types": [
+        {
+          "type": "expression",
+          "named": true
+        },
+        {
+          "type": "metadata_block",
           "named": true
         }
       ]
@@ -349,7 +549,7 @@
           "named": true
         },
         {
-          "type": "term",
+          "type": "primary_term",
           "named": true
         }
       ]
@@ -379,6 +579,10 @@
     "named": false
   },
   {
+    "type": "$",
+    "named": false
+  },
+  {
     "type": "&",
     "named": false
   },
@@ -388,6 +592,30 @@
   },
   {
     "type": ")",
+    "named": false
+  },
+  {
+    "type": "*",
+    "named": false
+  },
+  {
+    "type": "+",
+    "named": false
+  },
+  {
+    "type": ",",
+    "named": false
+  },
+  {
+    "type": "---",
+    "named": false
+  },
+  {
+    "type": ".",
+    "named": false
+  },
+  {
+    "type": "///",
     "named": false
   },
   {
@@ -423,7 +651,23 @@
     "named": false
   },
   {
+    "type": "bare_string",
+    "named": true
+  },
+  {
+    "type": "group",
+    "named": false
+  },
+  {
+    "type": "group_metadata_line",
+    "named": true
+  },
+  {
     "type": "identifier",
+    "named": true
+  },
+  {
+    "type": "metadata_line",
     "named": true
   },
   {
