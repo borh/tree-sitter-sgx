@@ -1,21 +1,7 @@
-; Identifiers
+; Basic identifiers
 (identifier) @variable
 
-; Keywords and operators
-":=" @operator
-"." @punctuation.delimiter
-"&" @operator
-"|" @operator
-"!" @operator
-"?" @operator
-":" @operator
-"~" @operator
-"@" @operator
-
-; Relation operators
-(relation_operator) @operator
-
-; Pattern definitions
+; Pattern names and references
 (pattern_name) @function
 (pattern_reference (pattern_name) @function.reference)
 
@@ -23,18 +9,26 @@
 (group_name) @namespace
 "group" @keyword
 
-; Metadata
-(metadata_block) @comment
-(group_metadata_line) @comment
-"///" @comment
+; Operators and punctuation
+":=" @operator
+"." @punctuation.delimiter
+"&" @operator
+"|" @operator
+"!" @operator
+":" @operator
+"@" @operator
+(relation_operator) @operator
 
 ; Node patterns
 (node_pattern
   "[" @punctuation.bracket
-  (attributes)? @_content
   "]" @punctuation.bracket)
 
-; Root node pattern
+; Bare patterns
+(bare_word) @string
+(bare_regex) @string.regex
+
+; Root pattern
 (node_pattern
   "[" @punctuation.bracket
   "$" @constant
@@ -49,21 +43,21 @@
 ; Regular expressions
 (regex) @string.regex
 
-; Names
+; Node names
 (node_name
   "=" @operator
   (name) @variable)
-(edge_name
-  ["=" "~"] @operator
-  (name) @variable)
 
-; Bare strings
-(bare_string) @string
+; Comments and metadata
+(metadata_block) @comment
+(metadata_line) @comment
+(group_metadata_line) @comment
+"///" @comment
 
-; Relation patterns
-(relation_pattern
-  (relation_label) @type)
-
-; Parentheses and brackets
-["(" ")" "[" "]"] @punctuation.bracket
+; Pattern types
+(basic_pattern) @normal
+(compound_pattern) @special
+(negation) @special
+(relation) @special
+(boolean_expr) @special
 
