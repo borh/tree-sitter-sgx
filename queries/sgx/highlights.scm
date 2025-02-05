@@ -11,9 +11,8 @@
 
 ; Operators and punctuation
 ":=" @operator
-"." @punctuation.delimiter
-"&" @operator
-"|" @operator
+(terminator) @punctuation.delimiter
+(boolean_operator) @operator
 "!" @operator
 ":" @operator
 "@" @operator
@@ -43,10 +42,24 @@
 ; Regular expressions
 (regex) @string.regex
 
+; Quantifiers
+(optional_group) @operator
+(repeat_group) @operator
+(attributes "?" @operator)
+(attributes "*" @operator)
+(range_quantifier) @operator
+
 ; Node names
 (node_name
   "=" @operator
   (name) @variable)
+
+; Named match groups
+(named_match_group
+  "(?<" @punctuation.bracket
+  (identifier) @variable.parameter
+  ">" @punctuation.bracket
+  ")" @punctuation.bracket)
 
 ; Comments and metadata
 (metadata_block) @comment
@@ -55,9 +68,9 @@
 "///" @comment
 
 ; Pattern types
-(basic_pattern) @normal
+(atomic_pattern) @normal
 (compound_pattern) @special
 (negation) @special
 (relation) @special
-(boolean_expr) @special
+(boolean_operation) @special
 

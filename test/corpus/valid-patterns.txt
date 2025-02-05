@@ -112,7 +112,7 @@ grouped-relations.sgx
 :language(sgx)
 ================================================================================
 
-[] (<subj [] | <agent []) & @ []
+([] (<subj [] | <agent [])) & @ []
 
 --------------------------------------------------------------------------------
 
@@ -147,7 +147,7 @@ semgrex-jdoc-example-boolean-grouped-relations.sgx
 ---
 source: https://nlp.stanford.edu/nlp/javadoc/javanlp/edu/stanford/nlp/semgraph/semgrex/SemgrexPattern.html
 ---
-[] (<subj [] | <agent []) & @ []
+([] (<subj [] | <agent [])) & @ []
 
 --------------------------------------------------------------------------------
 

@@ -1,7 +1,21 @@
 module.exports = grammar({
   name: 'sgx',
   
-  extras: $ => [/\s/],
+  extras: $ => [
+    /\s/,
+    /#.*/  // Line comments
+  ],
+
+  precedences: $ => [
+    [$.terminator],          // Level 1 (highest)
+    [$.named_match_group],   // Level 2 (now above atomic_pattern)
+    [$.quantifier],          // Level 3
+    [$.negation],            // Level 4
+    [$.atomic_pattern],      // Level 5 (now below named groups)
+    [$.relation],            // Level 6
+    [$.boolean_operation],   // Level 7
+    [$.pattern_sequence],    // Level 8 (lowest)
+  ],
 
   rules: {
     source_file: $ => repeat(
@@ -12,69 +26,110 @@ module.exports = grammar({
       )
     ),
 
+    top_level_pattern: $ => prec.left(1, seq(
+      field('body', choice(
+        $.pattern_sequence,
+        $.compound_pattern
+      )),
+      $.terminator
+    )),
+
+    terminator: $ => '.',
+
     standalone_pattern: $ => seq(
       optional($.metadata_block),
-      $.pattern,
-      optional('.')
+      $.top_level_pattern
     ),
 
     pattern_definition: $ => seq(
       optional($.metadata_block),
       $.pattern_name,
       ':=',
-      $.pattern,
-      '.'
+      field('definition', $.top_level_pattern)
     ),
 
-    // Simplified pattern hierarchy
-    pattern: $ => choice(
-      $.basic_pattern,
-      $.compound_pattern
-    ),
+    pattern_list: $ => prec.left(seq($.atomic_pattern, $.atomic_pattern)),
 
-    basic_pattern: $ => choice(
-      $.optional_pattern,
-      $.node_pattern,
-      $.pattern_reference,
-      $.bare_pattern
-    ),
+    nested_pattern: $ => prec.left(1, seq(
+      repeat1(choice(
+        $.atomic_pattern,
+        $.compound_pattern
+      )),
+      optional($.boolean_operator)
+    )),
 
-    compound_pattern: $ => choice(
-      $.negation,
-      $.relation,
-      $.grouped_expr
-    ),
-
-    grouped_expr: $ => choice(
-      $.boolean_operation,
-      $.optional_relation
-    ),
-
-    boolean_operation: $ => seq(
-      '(',
-      $.basic_pattern,
-      choice('&', '|'),
-      $.basic_pattern,
-      ')'
-    ),
-
-    optional_pattern: $ => seq(
-      choice(
+    atomic_pattern: $ => choice(
+      prec.left(2, $.named_match_group),  // Explicit precedence boost
+      prec.left(5, choice(  // Group other atomic patterns at lower precedence
+        $.compound_pattern,
+        $.quantifier,
         $.node_pattern,
-        $.pattern_reference,
-        $.bare_pattern
-      ),
-      '?'
+        $.pattern_reference, 
+        $.bare_pattern,
+        $.negation,
+        $.relation,
+        $.boolean_operation
+      ))
     ),
 
-    // Add this rule for bare patterns
+    quantifier: $ => choice(
+      $.optional_pattern,
+      $.repeat_pattern,
+      $.range_quantifier
+    ),
+
+    named_match_group: $ => prec(2, seq(
+      '(?<',
+      field('name', $.identifier),
+      '>',
+      field('pattern', $.pattern),
+      ')'
+    )),
+
+    pattern: $ => choice(
+      prec.left(3, seq($.pattern, '|', $.pattern)),  // Alternation
+      $.pattern_sequence
+    ),
+
+    pattern_sequence: $ => prec.left(-1, 
+      seq(
+        repeat1($.atomic_pattern)  // Compound_pattern is already in atomic_pattern
+      )
+    ),
+
+    boolean_operator: $ => choice('&', '|'),
+
+    compound_pattern: $ => prec(5, seq(
+      '(',
+      field('pattern', choice(
+        $.boolean_operation,
+        $.pattern
+      )),
+      ')'
+    )),
+
+    boolean_operation: $ => prec.left(3, seq(
+      field('left', $.atomic_pattern),
+      field('operator', $.boolean_operator), 
+      field('right', $.pattern)
+    )),
+
+    optional_pattern: $ => prec(5, seq(
+      field('pattern', $.atomic_pattern),
+      '?'
+    )),
+
+    repeat_pattern: $ => prec(5, seq(
+      field('pattern', $.atomic_pattern),
+      '*'
+    )),
+
     bare_pattern: $ => choice(
       $.bare_word,
       $.bare_regex
     ),
 
-    // Add these rules
-    bare_word: $ => token(/[一-龯ぁ-んァ-ヶ]+/),  // Japanese characters
+    bare_word: $ => token(/[一-龯ぁ-んァ-ヶ]+/),  // FIXME: This should not be just Japanese characters
     
     bare_regex: $ => token(seq(
       '/',
@@ -89,51 +144,76 @@ module.exports = grammar({
       '?'
     ),
 
-    negation: $ => seq(
+    negation: $ => prec(4, seq(  // Higher precedence than relation
       '!',
       choice(
-        $.basic_pattern,
+        $.pattern,
         $.boolean_operation
       )
-    ),
+    )),
 
-    relation: $ => seq(
-      $.basic_pattern,
+    relation: $ => prec.left(3, seq(  // Lower precedence than negation
+      $.atomic_pattern,
       $.relation_operator,
       optional($.relation_name),
-      $.basic_pattern
-    ),
+      $.atomic_pattern
+    )),
 
     relation_name: $ => seq(
       '=',
       $.identifier
     ),
 
-    boolean_expr: $ => prec('boolean_expr', seq(
-      $.basic_pattern,
-      choice('&', '|'),
-      $.basic_pattern
-    )),
 
     node_pattern: $ => seq(
       '[',
       optional(choice(
         '$',
-        $.attributes,
-        $.bare_word,  // Allow bare words inside nodes too
-        $.bare_regex  // Allow regex inside nodes too
+        field('attributes', $.attributes),
+        field('pattern', choice(
+          $.bare_word,
+          $.bare_regex,
+          $.optional_group,
+          $.repeat_group,
+          $.range_quantifier
+        ))
       )),
       ']',
       optional($.node_name)
     ),
 
-    // Simplified attributes to remove ambiguity
-    attributes: $ => seq(
-      $.attribute,
-      repeat(seq(';', $.attribute))
+    range_quantifier: $ => prec(5, seq(
+      field('pattern', $.atomic_pattern),
+      field('range', token(/\{\s*\d+\s*(,\s*\d+\s*)?\}/))
+    )),
+
+    optional_group: $ => seq(
+      '(',
+      field('pattern', $.pattern),
+      ')',
+      '?'
     ),
 
-    // Make negation part of the key instead of attribute
+    repeat_group: $ => seq(
+      '(',
+      field('pattern', $.pattern),
+      ')',
+      '*'
+    ),
+
+    attributes: $ => seq(
+      choice(
+        $.attribute,
+        seq($.attribute, '?'),
+        seq($.attribute, '*')
+      ),
+      repeat(seq(';', choice(
+        $.attribute,
+        seq($.attribute, '?'),
+        seq($.attribute, '*')
+      )))
+    ),
+
     attribute: $ => seq(
       $.key,
       ':',

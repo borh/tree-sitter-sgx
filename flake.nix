@@ -53,33 +53,35 @@
               # We first propagate the flag
               (pkgs.tree-sitter.override {
                 webUISupport = true;
-              }).overrideAttrs
-                # ... and then add the patch fix
-                (
-                  oldAttrs: {
-                    patches = [
-                      (pkgs.substitute {
-                        src = ./fix-paths.patch;
-                        substitutions = [
-                          "--subst-var-by"
-                          "emcc"
-                          "${pkgs.emscripten}/bin/emcc"
-                        ];
-                      })
-                    ];
-                    postInstall =
-                      oldAttrs.postInstall
-                      + ''
-                        cp lib/binding_web/tree-sitter.js $out/lib
-                        cp lib/binding_web/tree-sitter.wasm $out/lib
-                      '';
-                  }
-                )
+              })
+              # .overrideAttrs
+              # # ... and then add the patch fix
+              # (
+              #   oldAttrs: {
+              #     patches = [
+              #       (pkgs.substitute {
+              #         src = ./fix-paths.patch;
+              #         substitutions = [
+              #           "--subst-var-by"
+              #           "emcc"
+              #           "${pkgs.emscripten}/bin/emcc"
+              #         ];
+              #       })
+              #     ];
+              #     postInstall =
+              #       oldAttrs.postInstall
+              #       + ''
+              #         cp lib/binding_web/tree-sitter.js $out/lib
+              #         cp lib/binding_web/tree-sitter.wasm $out/lib
+              #       '';
+              #   }
+              # )
             )
             pkgs.bashInteractive
             pkgs.nodejs
             pkgs.git
             pkgs.git-cliff # Changelog generator
+            pkgs.gnumake
           ];
         in
         {
@@ -99,9 +101,6 @@
                 ${config.pre-commit.installationScript}
                 # Resetting tty settings prevents issues after exiting the shell
                 ${pkgs.coreutils}/bin/stty sane
-                # export TERM="xterm-256color"
-                # export LANG="en_US.UTF-8"
-                # export LC_ALL="en_US.UTF-8"
                 # Set up shell and prompt
                 export SHELL=${pkgs.bashInteractive}/bin/bash
                 export PS1='(direnv) \[\e[34m\]\w\[\e[0m\] $(if [[ $? == 0 ]]; then echo -e "\[\e[32m\]"; else echo -e "\[\e[31m\]"; fi)#\[\e[0m\] '
