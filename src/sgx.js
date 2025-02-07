@@ -8,13 +8,14 @@ module.exports = grammar({
 
   precedences: $ => [
     [$.terminator],          // Level 1 (highest)
-    [$.named_match_group],   // Level 2 (now above atomic_pattern)
-    [$.quantifier],          // Level 3
-    [$.negation],            // Level 4
-    [$.atomic_pattern],      // Level 5 (now below named groups)
-    [$.relation],            // Level 6
-    [$.boolean_operation],   // Level 7
-    [$.pattern_sequence],    // Level 8 (lowest)
+    [$.pattern_definition],  // Level 2
+    [$.named_match_group],   // Level 3
+    [$.quantifier],         // Level 4
+    [$.negation],           // Level 5
+    [$.atomic_pattern],      // Level 6 - Keep this level
+    [$.relation],           // Level 7
+    [$.boolean_operation],   // Level 8
+    [$.pattern_sequence],    // Level 9 (lowest)
   ],
 
   rules: {
@@ -41,36 +42,28 @@ module.exports = grammar({
       $.top_level_pattern
     ),
 
-    pattern_definition: $ => seq(
+    pattern_definition: $ => prec(2, seq(
       optional($.metadata_block),
-      $.pattern_name,
+      field('name', $.pattern_name),
       ':=',
-      field('definition', $.top_level_pattern)
-    ),
-
-    pattern_list: $ => prec.left(seq($.atomic_pattern, $.atomic_pattern)),
-
-    nested_pattern: $ => prec.left(1, seq(
-      repeat1(choice(
-        $.atomic_pattern,
-        $.compound_pattern
-      )),
-      optional($.boolean_operator)
+      field('definition', seq(
+        field('pattern', seq(
+          $.named_match_group,
+          optional($.pattern_sequence)
+        )),
+        $.terminator
+      ))
     )),
 
-    atomic_pattern: $ => choice(
-      prec.left(2, $.named_match_group),  // Explicit precedence boost
-      prec.left(5, choice(  // Group other atomic patterns at lower precedence
-        $.compound_pattern,
-        $.quantifier,
-        $.node_pattern,
-        $.pattern_reference, 
-        $.bare_pattern,
-        $.negation,
-        $.relation,
-        $.boolean_operation
-      ))
-    ),
+
+    atomic_pattern: $ => prec(6, choice(  // Explicitly set precedence to 6
+      $.compound_pattern,
+      $.node_pattern,
+      $.bare_pattern,
+      $.negation,
+      $.relation,
+      $.pattern_reference
+    )),
 
     quantifier: $ => choice(
       $.optional_pattern,
@@ -78,23 +71,36 @@ module.exports = grammar({
       $.range_quantifier
     ),
 
-    named_match_group: $ => prec(2, seq(
-      '(?<',
+    named_match_group: $ => prec.right(3, seq(
+      '?<',
       field('name', $.identifier),
       '>',
-      field('pattern', $.pattern),
+      '(',
+      field('pattern', choice(
+        $.boolean_operation,
+        $.compound_pattern,
+        seq($.pattern_sequence, repeat(seq(
+          field('operator', $.boolean_operator),
+          $.pattern_sequence
+        )))
+      )),
       ')'
     )),
 
-    pattern: $ => choice(
-      prec.left(3, seq($.pattern, '|', $.pattern)),  // Alternation
+    pattern: $ => prec.left(3, choice(
+      seq($.pattern_sequence, '|', $.pattern_sequence),  // Alternation
       $.pattern_sequence
-    ),
+    )),
 
-    pattern_sequence: $ => prec.left(-1, 
-      seq(
-        repeat1($.atomic_pattern)  // Compound_pattern is already in atomic_pattern
-      )
+    pattern_sequence: $ => prec.left(9, repeat1(  // Keep lowest precedence of 9
+      choice(
+        $.atomic_pattern,
+        $.pattern_reference,
+        $.node_pattern,
+        $.optional_group,
+        $.repeat_group,
+        $.quantifier
+      ))
     ),
 
     boolean_operator: $ => choice('&', '|'),
@@ -108,10 +114,20 @@ module.exports = grammar({
       ')'
     )),
 
-    boolean_operation: $ => prec.left(3, seq(
-      field('left', $.atomic_pattern),
-      field('operator', $.boolean_operator), 
-      field('right', $.pattern)
+    boolean_operation: $ => prec.left(8, seq(
+      field('left', choice(
+        $.atomic_pattern,
+        $.pattern_sequence,
+        $.pattern_reference,
+        $.node_pattern
+      )),
+      field('operator', $.boolean_operator),
+      field('right', choice(
+        $.atomic_pattern,
+        $.pattern_sequence,
+        $.pattern_reference,
+        $.node_pattern
+      ))
     )),
 
     optional_pattern: $ => prec(5, seq(
@@ -129,7 +145,7 @@ module.exports = grammar({
       $.bare_regex
     ),
 
-    bare_word: $ => token(/[一-龯ぁ-んァ-ヶ]+/),  // FIXME: This should not be just Japanese characters
+    bare_word: $ => token(/[a-zA-Z0-9一-龯ぁ-んァ-ヶ\p{L}]+/u),  // Allow letters, numbers and Unicode
     
     bare_regex: $ => token(seq(
       '/',
@@ -152,7 +168,7 @@ module.exports = grammar({
       )
     )),
 
-    relation: $ => prec.left(3, seq(  // Lower precedence than negation
+    relation: $ => prec.left(7, seq(  // Match precedence table level 7
       $.atomic_pattern,
       $.relation_operator,
       optional($.relation_name),
@@ -281,6 +297,6 @@ module.exports = grammar({
 
     group_name: $ => $.identifier,
     group_metadata_line: $ => token(/[^/][^\n]*/),
-    identifier: $ => /[a-zA-Z_\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF][^\s;:{}=\/&|!()\[\]<>.~@]*/
+    identifier: $ => token(/[a-zA-Z_\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF][^\s;:{}=\/&|!()\[\]<>.~@]*/)
   }
 });

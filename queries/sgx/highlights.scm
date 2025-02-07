@@ -56,10 +56,9 @@
 
 ; Named match groups
 (named_match_group
-  "(?<" @punctuation.bracket
+  "?<" @punctuation.bracket
   (identifier) @variable.parameter
-  ">" @punctuation.bracket
-  ")" @punctuation.bracket)
+  ">" @punctuation.bracket)
 
 ; Comments and metadata
 (metadata_block) @comment

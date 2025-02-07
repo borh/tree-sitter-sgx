@@ -12,15 +12,7 @@
           "named": true
         },
         {
-          "type": "boolean_operation",
-          "named": true
-        },
-        {
           "type": "compound_pattern",
-          "named": true
-        },
-        {
-          "type": "named_match_group",
           "named": true
         },
         {
@@ -33,10 +25,6 @@
         },
         {
           "type": "pattern_reference",
-          "named": true
-        },
-        {
-          "type": "quantifier",
           "named": true
         },
         {
@@ -115,6 +103,18 @@
           {
             "type": "atomic_pattern",
             "named": true
+          },
+          {
+            "type": "node_pattern",
+            "named": true
+          },
+          {
+            "type": "pattern_reference",
+            "named": true
+          },
+          {
+            "type": "pattern_sequence",
+            "named": true
           }
         ]
       },
@@ -133,7 +133,19 @@
         "required": true,
         "types": [
           {
-            "type": "pattern",
+            "type": "atomic_pattern",
+            "named": true
+          },
+          {
+            "type": "node_pattern",
+            "named": true
+          },
+          {
+            "type": "pattern_reference",
+            "named": true
+          },
+          {
+            "type": "pattern_sequence",
             "named": true
           }
         ]
@@ -247,12 +259,34 @@
           }
         ]
       },
+      "operator": {
+        "multiple": true,
+        "required": false,
+        "types": [
+          {
+            "type": "boolean_operator",
+            "named": true
+          }
+        ]
+      },
       "pattern": {
-        "multiple": false,
+        "multiple": true,
         "required": true,
         "types": [
           {
-            "type": "pattern",
+            "type": "boolean_operation",
+            "named": true
+          },
+          {
+            "type": "boolean_operator",
+            "named": true
+          },
+          {
+            "type": "compound_pattern",
+            "named": true
+          },
+          {
+            "type": "pattern_sequence",
             "named": true
           }
         ]
@@ -386,10 +420,6 @@
       "required": true,
       "types": [
         {
-          "type": "pattern",
-          "named": true
-        },
-        {
           "type": "pattern_sequence",
           "named": true
         }
@@ -405,22 +435,42 @@
         "required": true,
         "types": [
           {
-            "type": "top_level_pattern",
+            "type": "terminator",
+            "named": true
+          }
+        ]
+      },
+      "name": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "pattern_name",
+            "named": true
+          }
+        ]
+      },
+      "pattern": {
+        "multiple": true,
+        "required": true,
+        "types": [
+          {
+            "type": "named_match_group",
+            "named": true
+          },
+          {
+            "type": "pattern_sequence",
             "named": true
           }
         ]
       }
     },
     "children": {
-      "multiple": true,
-      "required": true,
+      "multiple": false,
+      "required": false,
       "types": [
         {
           "type": "metadata_block",
-          "named": true
-        },
-        {
-          "type": "pattern_name",
           "named": true
         }
       ]
@@ -466,6 +516,26 @@
       "types": [
         {
           "type": "atomic_pattern",
+          "named": true
+        },
+        {
+          "type": "node_pattern",
+          "named": true
+        },
+        {
+          "type": "optional_group",
+          "named": true
+        },
+        {
+          "type": "pattern_reference",
+          "named": true
+        },
+        {
+          "type": "quantifier",
+          "named": true
+        },
+        {
+          "type": "repeat_group",
           "named": true
         }
       ]
@@ -694,10 +764,6 @@
     "named": false
   },
   {
-    "type": "(?<",
-    "named": false
-  },
-  {
     "type": ")",
     "named": false
   },
@@ -735,6 +801,10 @@
   },
   {
     "type": "?",
+    "named": false
+  },
+  {
+    "type": "?<",
     "named": false
   },
   {
