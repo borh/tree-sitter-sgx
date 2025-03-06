@@ -1,163 +1,285 @@
 ================================================================================
-single.sgx
-
+bare-pattern.sgx
 :language(sgx)
 ================================================================================
-
-![lemma:run]
+[key=value]
 
 --------------------------------------------------------------------------------
 
-
+(source_file
+  (node_pattern
+    (attribute
+      (key
+        (identifier))
+      (value
+        (identifier)))))
 
 ================================================================================
-example-2.3-named-nodes.sgx
-
+basic-metadata-group.sgx
 :language(sgx)
 ================================================================================
-
-[word:running]
-  >nsubj ([] >conj []=C)
-  >nsubj []=C
+metadata
+category = test
+begin
+pattern1 := [key=value].
+pattern2 := @pattern1 [other=val].
+end
 
 --------------------------------------------------------------------------------
 
-
+(source_file
+  (metadata_block
+    (metadata_line)
+    (pattern_definition
+      (identifier)
+      (atomic_pattern
+        (node_pattern
+          (attribute
+            (key
+              (identifier))
+            (value
+              (identifier))))))
+    (pattern_definition
+      (identifier)
+      (pattern_sequence
+        (atomic_pattern
+          (pattern_reference
+            (identifier)))
+        (atomic_pattern
+          (node_pattern
+            (attribute
+              (key
+                (identifier))
+              (value
+                (identifier)))))))))
 
 ================================================================================
-example-2.3-named-edges.sgx
-
+boolean-attributes.sgx
 :language(sgx)
 ================================================================================
-
-[word:running]
-  >nsubj ([] >conj=conj []=C)
-  >nsubj []=C
+test := [key1=val1 & key2=/regex/].
 
 --------------------------------------------------------------------------------
 
-================================================================================
-example-2.4-a.sgx
+(source_file
+  (pattern_definition
+    (identifier)
+    (atomic_pattern
+      (node_pattern
+        (attribute_conjunction
+          (attribute
+            (key
+              (identifier))
+            (value
+              (identifier)))
+          (attribute
+            (key
+              (identifier))
+            (value
+              (regex))))))))
 
+================================================================================
+named-group-quantifier.sgx
 :language(sgx)
 ================================================================================
-
-[lemma:/son|daughter|child/]
-  >/nmod:poss/ [ner:PERSON]=ent
-  >appos [ner:PERSON]=slot
+test := (?<group> [attr=val])+.
 
 --------------------------------------------------------------------------------
 
-================================================================================
-example-2.4-b.sgx
+(source_file
+  (pattern_definition
+    (identifier)
+    (atomic_pattern
+      (named_group
+        (identifier)
+        (atomic_pattern
+          (node_pattern
+            (attribute
+              (key
+                (identifier))
+              (value
+                (identifier))))))
+      (quantifier))))
 
+================================================================================
+regex-values.sgx
 :language(sgx)
 ================================================================================
-
-[ner:PERSON]=slot
- >appos
-   ([lemma:/son|daughter|child/]
-   >/nmod:of/ [ner:PERSON]=ent)
+test := [lemma=/^abc/ & orth=/xyz$/].
 
 --------------------------------------------------------------------------------
 
+(source_file
+  (pattern_definition
+    (identifier)
+    (atomic_pattern
+      (node_pattern
+        (attribute_conjunction
+          (attribute
+            (key
+              (identifier))
+            (value
+              (regex)))
+          (attribute
+            (key
+              (identifier))
+            (value
+              (regex))))))))
 
 ================================================================================
-example-2.2-root-special-symbol.sgx
-
+more-patterns.sgx
 :language(sgx)
 ================================================================================
-
-[$] > []
+pattern := (?<name> [pos=/VERB|NOUN/]) foo (?<focus>[lemma=test]).
 
 --------------------------------------------------------------------------------
 
-================================================================================
-multiple-patterns.sgx
+(source_file
+  (pattern_definition
+    (identifier)
+    (pattern_sequence
+      (atomic_pattern
+        (named_group
+          (identifier)
+          (atomic_pattern
+            (node_pattern
+              (attribute
+                (key
+                  (identifier))
+                (value
+                  (regex)))))))
+      (atomic_pattern
+        (bare_element
+          (identifier)))
+      (atomic_pattern
+        (named_group
+          (identifier)
+          (atomic_pattern
+            (node_pattern
+              (attribute
+                (key
+                  (identifier))
+                (value
+                  (identifier))))))))))
 
+================================================================================
+metadata-2.sgx
 :language(sgx)
 ================================================================================
-
-pattern_1 := [lemma:go].
-pattern_2 := @pattern_1 (>dobj [tag:NN] | >prep [lemma:to]).
+metadata
+comment: This is a test
+begin
+test_pattern :=
+  [key=val].
+end
 
 --------------------------------------------------------------------------------
 
+(source_file
+  (metadata_block
+    (metadata_line)
+    (pattern_definition
+      (identifier)
+      (atomic_pattern
+        (node_pattern
+          (attribute
+            (key
+              (identifier))
+            (value
+              (identifier))))))))
 
 ================================================================================
-two.sgx
-
+complex-quantifiers.sgx
 :language(sgx)
 ================================================================================
-
-[tag:/NN.*/; !word:dog]
+test := [attr=val]{2,5} [other=foo]*.
 
 --------------------------------------------------------------------------------
 
-
+    (source_file
+      (pattern_definition
+        (identifier)
+        (pattern_sequence
+          (atomic_pattern
+            (node_pattern
+              (attribute
+                (key
+                  (identifier))
+                (value
+                  (identifier))))
+            (quantifier))
+          (atomic_pattern
+            (node_pattern
+              (attribute
+                (key
+                  (identifier))
+                (value
+                  (identifier))))
+            (quantifier)))))
 
 ================================================================================
-complex.sgx
-
+end-to-end.sgx
 :language(sgx)
 ================================================================================
+# This is a comment (it can also be used after a pattern definition on the same line).
+# This is the basic syntax for matching two consequitive tokens, one matched against its text and one matched against its token_feature:
+# pattern-name := bare_token [token_feature=feature_value].
+# The grammar supports bare patterns like above, and also patterns grouped by metadata blocks.
 
-!([lemma:go] (>dobj [tag:NN] | >prep [lemma:to]))
+# We support OR between tokens or token groups using `|`.
+# AND can be achieved via `&` within [k1=v1 & k2=v2] for token features, but otherwise is not used between tokens.
+# These patterns are bare patterns not belonging to any group.
+動詞終止形 := [pos=/VERB|AUX/]+ [pos=/VERB/AUX/ & cform=終止形] | [pos=VERB & cform=終止形].
+形容詞終止形 := [pos=形容詞 & cform=終止形].
+助動詞終止形 := [pos=助動詞 & cform=終止形].
+用言終止形 := @動詞終止形 | @形容詞終止形 | @助動詞終止形.
 
---------------------------------------------------------------------------------
+動詞連用形 := [pos=/VERB|AUX/]+ [pos=/VERB/AUX/ & cform=連用形] | [pos=VERB & cform=連用形].
+用言連用形 := @動詞連用形 | @形容詞語幹.
+形容動詞 := [pos1=形状詞] | [pos3=形状詞可能]. # TODO working off of かもしれない example
+# Optional tokens are denoted by `?` (others include `*`, `+`, and `{n,m}`--same as regex).
+# Regex patterns can be used by enclosing them in `/`. When written bare they will match the token text, but they can also be used within the [] to match arbitrary feature values.
+ARU := [lemma=/^(ある|有る)$/ & orth=/^(?!あろう|有ろう|あれ|有れ)$/] まし? た?.
 
-================================================================================
-grouped-relations.sgx
-
-:language(sgx)
-================================================================================
-
-([] (<subj [] | <agent [])) & @ []
-
---------------------------------------------------------------------------------
-
-================================================================================
-optional-relations.sgx
-
-:language(sgx)
-================================================================================
-
-[] (>dobj [])? >nmod []
-
---------------------------------------------------------------------------------
-
-
-================================================================================
-empty-node-pattern.sgx
-
-:language(sgx)
-================================================================================
-
-[] > []
-
---------------------------------------------------------------------------------
+# Metadata groups have metadata attached by enclosing in a 'metadata' block with 'begin'-'end' used to specify which patterns to apply to..
+metadata
+category: がある
+type: 文末尾から
+meidai: 用言終止形、ただし形容動詞ナ形、助動詞「だ」デアル形、助動詞「だ」デアル形
+begin
+# We can use ?<name> syntax (named capturing group from regex) to name the matching group.
+# We can reference another pattern by using the `@pattern` syntax.
+必要がある := (?<命題> @用言終止形) [lemma=必要] が @ARU.
+恐れがある := (?<命題> @用言終止形) [lemma=恐れ] が @ARU.
+end
 
 
-================================================================================
-semgrex-jdoc-example-boolean-grouped-relations.sgx
+metadata
+  category: う
+  subcategory: う
+  type: 文末尾から
+  meidai: 用言終止形、ただし形容動詞語幹、
+begin
+だろう := (?<命題> @用言終止形) だろう.
+であろう := (?<命題> @用言終止形) で あろう.
+う := (?<命題> @用言終止形) [cform: 意志推量形].
+end
 
-:language(sgx)
-================================================================================
+metadata
+  category: う
+  subcategory: よう
+  type: 文末尾から
+  meidai: 動詞連用形 あるいは 用言1段終止形
+begin
+よう := (?<命題> @動詞連用形) [cform: 意志推量形].
+end
 
----
-source: https://nlp.stanford.edu/nlp/javadoc/javanlp/edu/stanford/nlp/semgraph/semgrex/SemgrexPattern.html
----
-([] (<subj [] | <agent [])) & @ []
-
---------------------------------------------------------------------------------
-
-================================================================================
-semgrex-jdoc-example-optional.sgx
-
-:language(sgx)
-================================================================================
-
-[] (>dobj [])? >nmod []
-
+metadata
+  category: かもしれない
+  type: 文末尾から
+  meidai: 動詞終止形, 名詞, 用言終止形
+begin
+かもしれない := (?<命題> @用言終止形 | [pos=NOUN] | @形容動詞) か も [lemma=知る] @NAI.
+end
 --------------------------------------------------------------------------------
 

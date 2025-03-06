@@ -1,75 +1,57 @@
-; Basic identifiers
-(identifier) @variable
+; Comments and metadata
+(comment) @comment
 
-; Pattern names and references
-(pattern_name) @function
-(pattern_reference (pattern_name) @function.reference)
+; Metadata handling
+(metadata_block
+  "metadata" @keyword
+  "begin" @punctuation.special
+  "end" @punctuation.special) @comment.block.documentation
 
-; Groups
-(group_name) @namespace
-"group" @keyword
+(metadata_line) @comment.documentation
+
+; Pattern definitions
+(pattern_definition
+  (identifier) @entity.name.function
+  ":=" @keyword.operator.definition)
 
 ; Operators and punctuation
-":=" @operator
-(terminator) @punctuation.delimiter
-(boolean_operator) @operator
-"!" @operator
-":" @operator
-"@" @operator
-(relation_operator) @operator
+"&" @operator
+"|" @operator
+"." @punctuation.delimiter
 
 ; Node patterns
 (node_pattern
   "[" @punctuation.bracket
   "]" @punctuation.bracket)
 
-; Bare patterns
-(bare_word) @string
-(bare_regex) @string.regex
-
-; Root pattern
-(node_pattern
-  "[" @punctuation.bracket
-  "$" @constant
-  "]" @punctuation.bracket)
-
-; Attributes
 (attribute
   (key) @property
-  ":" @punctuation.delimiter
+  (choice "=" ":" ": ") @operator
   (value) @string)
 
-; Regular expressions
+; Regex patterns
 (regex) @string.regex
 
-; Quantifiers
-(optional_group) @operator
-(repeat_group) @operator
-(attributes "?" @operator)
-(attributes "*" @operator)
-(range_quantifier) @operator
+; Bare patterns and references
+(bare_element) @variable
 
-; Node names
-(node_name
-  "=" @operator
-  (name) @variable)
+(pattern_reference
+  "@" @operator
+  (identifier) @variable.member)
 
-; Named match groups
-(named_match_group
-  "?<" @punctuation.bracket
+; Special syntax
+(named_group
+  "(?<" @punctuation.special
   (identifier) @variable.parameter
-  ">" @punctuation.bracket)
+  ">" @punctuation.special)
 
-; Comments and metadata
-(metadata_block) @comment
-(metadata_line) @comment
-(group_metadata_line) @comment
-"///" @comment
+(parenthesized_pattern
+  "(" @punctuation.bracket
+  ")" @punctuation.bracket)
 
-; Pattern types
-(atomic_pattern) @normal
-(compound_pattern) @special
-(negation) @special
-(relation) @special
-(boolean_operation) @special
+; Quantifiers
+(quantifier) @operator
+
+; Identifiers and literals
+(identifier) @variable
 

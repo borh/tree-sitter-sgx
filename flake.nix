@@ -115,6 +115,7 @@
             runtimeInputs = development-packages;
             text = ''
               make clean
+              tree-sitter generate --report-states-for-rule '-' src/sgx.js
               tree-sitter generate src/sgx.js
               make test || echo "Tests failed"
               tree-sitter build --wasm
