@@ -26,8 +26,10 @@
 
 (attribute
   (key) @property
-  (choice "=" ":" ": ") @operator
+  "=" @operator
   (value) @string)
+
+(":" @operator)
 
 ; Regex patterns
 (regex) @string.regex

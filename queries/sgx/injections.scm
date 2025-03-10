@@ -4,10 +4,9 @@
     (#match? @injection.content "^/.*/$")))
   (#set! injection.language "regex"))
 
-((bare_regex) @injection.content
+((regex) @injection.content
   (#set! injection.language "regex"))
 
-((metadata_line
-  (metadata_value) @injection.content
-  (#match? @injection.content "^/.*/$"))
+((metadata_line) @injection.content
+  (#match? @injection.content "^/.*/$")
   (#set! injection.language "regex"))
